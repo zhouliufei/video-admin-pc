@@ -31,7 +31,7 @@
                 <el-button size="medium " type="primary" icon="el-icon-search" @click="searchInfo">查询</el-button>
             </div>
             <div style="float: left;padding-top: 5px;padding-left: 143px;">
-                <el-button  icon="el-icon-circle-plus-outline" size="medium" type="success"  @click="dialogFormVisible = true">新增</el-button>
+                <el-button  icon="el-icon-circle-plus-outline" size="medium" type="success"  @click="addBgm">新增</el-button>
             </div>
 
         </div>
@@ -102,7 +102,6 @@
                 layout="total, sizes, prev, pager, next, jumper"
                 :total="totalCount">
         </el-pagination>
-        <el-button type="text" @click="dialogFormVisible = true">打开嵌套表单的 Dialog</el-button>
 
         <el-dialog :title="title" :visible.sync="dialogFormVisible" width="40%">
             <el-form :model="form">
@@ -113,15 +112,14 @@
                     <el-input placeholder="请输入歌曲作者" style="width: 400px" v-model="form.author"></el-input>
                 </el-form-item>
                 <el-form-item label="上传文件" :label-width="formLabelWidth">
-                    <input type="file" style="width: 400px" @change="uploadFile"></input>
+                    <input type="file" style="width: 400px" @change="uploadFile" ref="pathClear"></input>
                 </el-form-item>
             </el-form>
             <div slot="footer" class="dialog-footer">
-                <el-button @click="dialogFormVisible = false">取 消</el-button>
+                <el-button @click="cancelBgm">取 消</el-button>
                 <el-button type="primary" @click="submitBgm">提交</el-button>
             </div>
         </el-dialog>
-
     </div>
 </template>
 
@@ -140,11 +138,7 @@
                 files:[],
                 search:{},
                 formLabelWidth:'160px',
-                form: {
-                    name: '',
-                    author: '',
-                },
-
+                form: {},
             };
         },
         mounted: function(value) {
@@ -164,7 +158,11 @@
                 this.getTableData(this.search);
             },
             handleEdit(index,rowValue) {
-                console.log(rowValue);
+                this.dialogFormVisible = true;
+                this.title = "编辑Bgm";
+                this.form = rowValue;
+                console.log(this.form);
+                console.log(this.files);
             },
             handleDelete(index,rowValue) {
                 console.log(rowValue);
@@ -174,18 +172,72 @@
                 this.search.pageSize = this.pageSize;
                 this.getTableData(this.search);
             },
+            cancelBgm() {
+                this.dialogFormVisible = false;
+                this.form = {};
+                this.$refs.pathClear.value ='';
+            },
+            addBgm() {
+                this.dialogFormVisible = true;
+                this.title = "新增Bgm";
+            },
             submitBgm() {
                 this.dialogFormVisible = false;
                 let formData = new FormData();
                 formData.append("file",this.files[0]);
                 formData.append("name",this.form.name);
                 formData.append("author",this.form.author);
-
-                bgmApi.uploadFile(formData).then(res => {
-                    console.log(res);
+                if(this.title == "新增Bgm") {
+                    this.addSubmit(formData);
+                } else {
+                    formData.append("id",this.form.id);
+                    formData.append("path",this.form.path);
+                    formData.append("status",this.form.status);
+                    this.updateSubmit(formData);
+                }
+                this.form = {};
+                this.$refs.pathClear.value ='';
+                this.handleSizeChange(this.pageSize);
+            },
+            updateSubmit(formData) {
+                bgmApi.updateUploadFile(formData).then(res => {
+                    if(res.status == 200) {
+                        this.$message({
+                            message:res.object,
+                            type:'success'
+                        })
+                    } else {
+                        this.$message({
+                            message:res.msg,
+                            type:'error'
+                        })
+                    }
                 }).catch(err => {
-                    console.log(err);
+                    this.$message({
+                        message:"访问服务器出错，请稍后",
+                        type:'error'
+                    })
                 })
+            },
+            addSubmit(formData) {
+                bgmApi.uploadFile(formData).then(res => {
+                    if(res.status == 200) {
+                        this.$message({
+                            message:res.object,
+                            type:'success'
+                        })
+                    } else {
+                        this.$message({
+                            message:res.msg,
+                            type:'error'
+                        })
+                    }
+                }).catch(err => {
+                    this.$message({
+                        message:"访问服务器出错，请稍后",
+                        type:'error'
+                    })
+                });
             },
             uploadFile(file) {
                 this.files = file.target.files;
@@ -197,8 +249,7 @@
                             message:res.object,
                             type:'success'
                         })
-                    }
-                    else {
+                    } else {
                         this.$message({
                             message:res.msg,
                             type:'error'

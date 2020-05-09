@@ -21,7 +21,8 @@ export default new Router({
                 },
                 {
                     path: '/bgm',
-                    component: () => import('../components/page/Bgm.vue')
+                    component: () => import('../components/page/Bgm.vue'),
+                    meta: {title: 'bgm管理'}
                 },
                 {
                     path: '/404',

@@ -12,6 +12,9 @@ export default {
     },
     uploadFile:function (param) {
         return request.fileUpload('/bgm/addBgm',param)
+    },
+    updateUploadFile:function (param) {
+        return request.fileUpload('/bgm/updateBgm',param);
     }
 
 }
